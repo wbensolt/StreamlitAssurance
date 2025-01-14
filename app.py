@@ -17,9 +17,36 @@ def get_value(val, my_dict):
         if val == key:
             return value
 
-app_mode = st.sidebar.selectbox('Select Page', ['Modele', 'Prediction'])
-if app_mode == 'Modele':
+# Configuration de la page
+st.set_page_config(layout="wide")
 
+# Fonction pour convertir une image en Base64
+def get_base64_of_bin_file(bin_file):
+    with open(bin_file, "rb") as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+# Fonction pour définir un arrière-plan pour la sidebar
+def set_sidebar_background(image_path):
+    encoded_image = get_base64_of_bin_file(image_path)
+    sidebar_style = f"""
+        <style>
+            [data-testid="stSidebar"] {{
+                background-image: url("data:image/png;base64,{encoded_image}");
+                background-size: cover;
+                background-repeat: no-repeat;
+                background-position: center;
+            }}
+        </style>
+    """
+    st.markdown(sidebar_style, unsafe_allow_html=True)
+    # Appeler la fonction avec l'image souhaitée
+set_sidebar_background("prime_assurance.png")
+
+app_mode = st.sidebar.selectbox('Select Page', ['Modele', 'Prediction'])
+
+if app_mode == 'Modele':
+   
     # Charger le modèle
     with open("linear_regression_model_1.pkl", "rb") as file:
         model_pipeline = pickle.load(file)
@@ -68,9 +95,9 @@ if app_mode == 'Prediction':
     with open('linear_regression_model_1.pkl', 'rb') as file:
         model = pickle.load(file)
 
-        st.write("Étapes du pipeline :", model.named_steps)
+        #st.write("Étapes du pipeline :", model.named_steps)
 
-        st.title("Prédiction avec un Modèle de Régression Linéaire")
+        st.title("Prédiction avec un Modèle de Régression Linéaire :")
         # Entrée utilisateur
         st.header("Entrer les caractéristiques")
         # Variables numériques
