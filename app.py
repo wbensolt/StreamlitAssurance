@@ -43,61 +43,34 @@ def set_sidebar_background(image_path):
     # Appeler la fonction avec l'image souhaitée
 set_sidebar_background("prime_assurance.png")
 
-app_mode = st.sidebar.selectbox('Select Page', ['Modele', 'Prediction'])
+app_mode = st.sidebar.selectbox('Select Page', ['Prediction','Modele'])
 
 if app_mode == 'Modele':
    
-    # Charger le modèle
-    with open("linear_regression_model_1.pkl", "rb") as file:
-        model_pipeline = pickle.load(file)
-
     # Titre de l'application
     st.title("Affichage du Modèle et de ses Coefficients")
+
+        # Charger le modèle
+    with open("ElasticNet_model_fit_2.pkl", "rb") as file:
+        model_pipeline = pickle.load(file)
+        st.write(model_pipeline)
 
     # Vérifier si le modèle contient une étape de régression linéaire
     try:
         # Accès au modèle final (dans le pipeline)
-        linear_model = model_pipeline.named_steps['linearregression']  # Adapter en fonction du nom de l'étape du modèle
+        linear_model = model_pipeline.named_steps['model']  # Adapter en fonction du nom de l'étape du modèle
     except AttributeError:
         st.error("Impossible de trouver l'étape de régression dans le pipeline. Vérifiez le fichier chargé.")
         linear_model = None
 
-    # Si le modèle est un modèle de régression linéaire, afficher les coefficients
-    if linear_model:
-
-        st.header("Modèle et Coefficients")
-        
-        # Afficher le type du modèle
-        st.write("**Modèle chargé :*****", type(linear_model).__name__)
-        
-        # Récupérer les coefficients
-        if hasattr(linear_model, 'coef_') and hasattr(linear_model, 'intercept_'):
-            coefficients = linear_model.coef_
-            intercept = linear_model.intercept_
-            st.write("Hello",model_pipeline.named_steps)
-            # Afficher les coefficients
-            st.write("### Coefficients du modèle")
-            coef_df = pd.DataFrame({
-                'Feature': model_pipeline.named_steps['polynomialfeatures'].get_feature_names_out(),
-                'Coefficient': coefficients
-            })
-            st.dataframe(coef_df)
-
-            # Afficher l'intercept
-            st.write("### Intercept")
-            st.write(intercept)
-        else:
-            st.error("Le modèle chargé n'a pas de coefficients (ce n'est peut-être pas un modèle de régression linéaire).")
-
-
 if app_mode == 'Prediction':    
     # Charger le modèle
-    with open('linear_regression_model_1.pkl', 'rb') as file:
+    with open('ElasticNet_model_fit_2.pkl', 'rb') as file:
         model = pickle.load(file)
 
         #st.write("Étapes du pipeline :", model.named_steps)
 
-        st.title("Prédiction avec un Modèle de Régression Linéaire :")
+        st.title("Prédiction avec un Modèle de Régression Linéaire ElasticNet")
         # Entrée utilisateur
         st.header("Entrer les caractéristiques")
         # Variables numériques
@@ -116,7 +89,6 @@ if app_mode == 'Prediction':
         )
 
         # Convertir les variables catégoriques et ordinales en format numérique
-        # Remplacez ces mappings par ceux utilisés dans votre prétraitement
         sex_mapping = {"male": "male", "female":"female"}
         smoker_mapping = {"yes": "yes", "no": "no"}
         region_mapping = {"southeast":"southeast", "northwest":"northwest", "northeast":"northeast", "southwest":"southwest"}
@@ -125,6 +97,20 @@ if app_mode == 'Prediction':
         smoker = smoker_mapping[smoker]
         region = region_mapping[region]
 
+        bmi_smoker = bmi * (1 if smoker == "yes" else 0)
+        age_smoker = age * (1 if smoker == "yes" else 0)
+        age_bmi = age * bmi
+
+        bins_age = [0, 28, 51, 65, np.inf]
+        labels_age = ['Jeune', 'Mature', 'Âgé', 'Senior']
+        
+        bins_bmi = [0, 18, 30, 40, np.inf]
+        labels_bmi = ['Maigre', 'Normal', 'Surpoids', 'Obèse']
+        
+        # Trouver le groupe d'âge correspondant
+        age_group = labels_age[np.digitize(age, bins_age, right=False) - 1]
+        bmi_category = labels_bmi[np.digitize(bmi, bins_bmi, right=False) - 1]
+
         input_data = {
             "age": age,
             "sex": sex,
@@ -132,6 +118,11 @@ if app_mode == 'Prediction':
             "children": children,
             "smoker": smoker,
             "region": region,
+            "age_group": age_group,
+            "bmi_category": bmi_category,
+            "bmi_smoker": bmi_smoker,
+            "age_smoker": age_smoker,
+            "age_bmi": age_bmi
         }
 
         # Ajouter un bouton pour effectuer une prédiction
